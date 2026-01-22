@@ -1,0 +1,10 @@
+# If empty → install latest stable from dl.k8s.io
+# Override example:
+# ansible-playbook playbook.yml -e kubectl_version=v1.30.3
+kubectl_version: ""
+
+kubectl_arch_map:
+  x86_64: amd64
+  aarch64: arm64
+
+kubectl_install_path: /usr/local/bin/kubectl

@@ -1,14 +1,74 @@
 ---
-- name: Install k9s on Fedora
-  shell: |
-    wget -q https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.rpm
-    sudo dnf install -y k9s_linux_amd64.rpm
-    rm k9s_linux_amd64.rpm
-  when: ansible_os_family == "RedHat"
+- name: Ensure facts are gathered
+  ansible.builtin.setup:
 
-- name: Install k9s on Debian/Ubuntu
-  shell: |
-    wget -q https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb
-    sudo dpkg -i k9s_linux_amd64.deb
-    rm k9s_linux_amd64.deb
-  when: ansible_os_family == "Debian"
+- name: Resolve k9s architecture
+  ansible.builtin.set_fact:
+    k9s_arch: "{{ k9s_arch_map[ansible_facts['architecture']] | default('amd64') }}"
+
+
+- name: Resolve package type
+  ansible.builtin.set_fact:
+    k9s_pkg_ext: "{{ 'rpm' if ansible_facts['os_family'] == 'RedHat' else 'deb' }}"
+  when: ansible_facts['os_family'] in ['RedHat', 'Debian']
+
+
+- name: Get latest k9s release from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/derailed/k9s/releases/latest"
+    return_content: true
+  register: k9s_latest
+  when: k9s_version | length == 0
+
+- name: Set effective k9s version (latest)
+  ansible.builtin.set_fact:
+    k9s_version_effective: "{{ k9s_latest.json.tag_name }}"
+  when: k9s_version | length == 0
+
+- name: Set effective k9s version (pinned)
+  ansible.builtin.set_fact:
+    k9s_version_effective: "{{ k9s_version }}"
+  when: k9s_version | length > 0
+
+# Build URL + temp path
+- name: Build k9s download URL
+  ansible.builtin.set_fact:
+    k9s_url: "https://github.com/derailed/k9s/releases/download/{{ k9s_version_effective }}/k9s_linux_{{ k9s_arch }}.{{ k9s_pkg_ext }}"
+    k9s_tmp: "/tmp/k9s_linux_{{ k9s_arch }}.{{ k9s_pkg_ext }}"
+
+- name: Download k9s package
+  ansible.builtin.get_url:
+    url: "{{ k9s_url }}"
+    dest: "{{ k9s_tmp }}"
+    mode: "0644"
+
+- name: Install k9s on Fedora / RHEL family
+  ansible.builtin.dnf:
+    name: "{{ k9s_tmp }}"
+    state: present
+    disable_gpg_check: true
+  become: true
+  when: ansible_facts['os_family'] == "RedHat"
+
+
+- name: Install k9s on Debian / Ubuntu / WSL
+  ansible.builtin.apt:
+    deb: "{{ k9s_tmp }}"
+    state: present
+    update_cache: true
+  become: true
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Remove downloaded package
+  ansible.builtin.file:
+    path: "{{ k9s_tmp }}"
+    state: absent
+
+- name: Verify k9s installation
+  ansible.builtin.command: k9s version
+  register: k9s_version_output
+  changed_when: false
+
+- name: Show installed k9s version
+  ansible.builtin.debug:
+    msg: "✅ k9s installed: {{ k9s_version_output.stdout }}"

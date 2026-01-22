@@ -1,16 +1,77 @@
 ---
-- name: Download kubectl
-  shell: |
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    chmod +x kubectl
-    sudo mv kubectl /usr/local/bin/
+- name: Ensure facts are gathered
+  ansible.builtin.setup:
 
-- name: Download and install Helm
-  shell: |
-    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+- name: Resolve kubectl architecture
+  ansible.builtin.set_fact:
+    kubectl_arch: "{{ kubectl_arch_map[ansible_facts['architecture']] | default('amd64') }}"
 
-- name: Install k9s
-  shell: |
-    wget -q -O - https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb
-    sudo dpkg -i k9s_linux_amd64.deb
-  when: ansible_facts['os_family'] == "Debian"
+- name: Get latest stable kubectl version
+  ansible.builtin.uri:
+    url: "https://dl.k8s.io/release/stable.txt"
+    return_content: true
+  register: kubectl_stable
+  when: kubectl_version | length == 0
+
+- name: Set effective kubectl version (latest)
+  ansible.builtin.set_fact:
+    kubectl_version_effective: "{{ kubectl_stable.content | trim }}"
+  when: kubectl_version | length == 0
+
+- name: Set effective kubectl version (pinned)
+  ansible.builtin.set_fact:
+    kubectl_version_effective: "{{ kubectl_version }}"
+  when: kubectl_version | length > 0
+
+- name: Download kubectl sha256
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version_effective }}/bin/linux/{{ kubectl_arch }}/kubectl.sha256"
+    dest: "/tmp/kubectl.sha256"
+    mode: "0644"
+
+- name: Download kubectl binary to temp
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version_effective }}/bin/linux/{{ kubectl_arch }}/kubectl"
+    dest: "/tmp/kubectl"
+    mode: "0755"
+
+- name: Read expected sha256
+  ansible.builtin.slurp:
+    src: /tmp/kubectl.sha256
+  register: kubectl_sha
+
+- name: Compute actual sha256
+  ansible.builtin.command: "sha256sum /tmp/kubectl"
+  register: kubectl_sha_actual
+  changed_when: false
+
+- name: Fail if checksum mismatch
+  ansible.builtin.assert:
+    that:
+      - "(kubectl_sha.content | b64decode | trim) in kubectl_sha_actual.stdout"
+    fail_msg: "kubectl checksum verification failed!"
+
+- name: Install kubectl to {{ kubectl_install_path }}
+  ansible.builtin.copy:
+    src: /tmp/kubectl
+    dest: "{{ kubectl_install_path }}"
+    mode: "0755"
+    remote_src: true
+  become: true
+
+- name: Cleanup temp files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/kubectl
+    - /tmp/kubectl.sha256
+
+- name: Verify kubectl installation
+  ansible.builtin.command: "{{ kubectl_install_path }} version --client --output=yaml"
+  register: kubectl_out
+  changed_when: false
+
+- name: Show kubectl version
+  ansible.builtin.debug:
+    msg: "✅ kubectl installed: {{ kubectl_version_effective }} (arch={{ kubectl_arch }})"
