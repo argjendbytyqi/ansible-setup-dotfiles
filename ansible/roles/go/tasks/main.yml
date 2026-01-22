@@ -1,0 +1,12 @@
+---
+- name: Install Go on Fedora
+  dnf:
+    name: golang
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install Go on Debian/Ubuntu
+  apt:
+    name: golang-go
+    state: present
+  when: ansible_os_family == "Debian"
