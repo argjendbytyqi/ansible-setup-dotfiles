@@ -25,8 +25,7 @@ sudo $PKG_MANAGER update -y
 # Install essential tools
 echo "📥 Installing essential tools..."
 if [ "$OS" = "fedora" ]; then
-    sudo dnf groupinstall "Development Tools" -y
-    sudo dnf install -y python3 python3-pip git curl wget
+    sudo dnf install -y @development-tools python3 python3-pip git curl wget
 else
     sudo apt-get install -y build-essential python3 python3-pip git curl wget
 fi
