@@ -1,0 +1,21 @@
+---
+- name: DevOps Tools Setup
+  hosts: localhost
+  become: yes
+  vars: 
+    ansible_connection: local
+  
+  roles:
+    - docker
+    - kubernetes
+    - terraform
+    - aws-cli
+    - go
+    - nodejs
+    - helm
+    - k9s
+
+  tasks:
+    - name: Final message
+      debug:
+        msg: "✅ All DevOps tools installed successfully!"
