@@ -1,14 +1,13 @@
 # Check if Terraform is installed
-if ! command -v terraform &> /dev/null
-then
-    echo "Terraform not found! Installing..."
-    # Commands to install Terraform
-    # For example, on Ubuntu:
-    sudo apt-get update
-    sudo apt-get install -y gnupg software-properties-common curl
-    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    sudo apt-get update
-    sudo apt-get install terraform
+command -v terraform >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Terraform not found. Installing..."
+    # Add your installation command here, e.g.,
+    # sudo apt-get install terraform
 else
-    echo "Terraform is already installed."i
+    echo "Terraform is already installed."
+fi
+
+# Remove terraform init and apply commands
+# terraform init
+# terraform apply
