@@ -1,12 +1,8 @@
-# Main Task File for Terraform
-
-# This file is responsible for orchestrating the tasks related to Terraform.
-
-- name: Initialize Terraform
-  shell: terraform init
-
-- name: Apply Terraform Configuration
-  shell: terraform apply -auto-approve
-
-- name: Destroy Terraform Configuration
-  shell: terraform destroy -auto-approve
+---
+- name: Install Terraform
+  shell: |
+    TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+    wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    sudo mv terraform /usr/local/bin/
+    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
