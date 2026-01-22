@@ -1,0 +1,6 @@
+---
+- name: Download and install Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    warn: false
