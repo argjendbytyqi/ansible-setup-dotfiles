@@ -1,0 +1,14 @@
+---
+- name: Install k9s on Fedora
+  shell: |
+    wget -q https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.rpm
+    sudo dnf install -y k9s_linux_amd64.rpm
+    rm k9s_linux_amd64.rpm
+  when: ansible_os_family == "RedHat"
+
+- name: Install k9s on Debian/Ubuntu
+  shell: |
+    wget -q https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb
+    sudo dpkg -i k9s_linux_amd64.deb
+    rm k9s_linux_amd64.deb
+  when: ansible_os_family == "Debian"
