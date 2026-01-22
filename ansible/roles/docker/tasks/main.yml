@@ -1,0 +1,24 @@
+---
+- name: Install Docker on Fedora
+  dnf:
+    name: docker
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install Docker on Debian/Ubuntu
+  apt:
+    name: docker.io
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add user to docker group
+  user: 
+    name: "{{ ansible_user_id }}"
+    groups: docker
+    append: yes
