@@ -1,0 +1,16 @@
+---
+- name: Download kubectl
+  shell: |
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x kubectl
+    sudo mv kubectl /usr/local/bin/
+
+- name: Download and install Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+- name: Install k9s
+  shell: |
+    wget -q -O - https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb
+    sudo dpkg -i k9s_linux_amd64.deb
+  when: ansible_os_family == "Debian"
