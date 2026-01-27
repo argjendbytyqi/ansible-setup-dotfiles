@@ -1,0 +1,15 @@
+tool_name: ""
+tool_repo: ""
+tool_binary: ""
+tool_version: ""
+
+tool_install_path: /usr/local/bin
+
+# IMPORTANT defaults
+tool_archive: false
+tool_asset_template: ""
+tool_archive_bin_path: ""
+
+tool_arch_map:
+  x86_64: amd64
+  aarch64: arm64

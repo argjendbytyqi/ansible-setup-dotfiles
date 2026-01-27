@@ -6,14 +6,7 @@
     ansible_connection: local
   
   roles:
-    - docker
-    - kubernetes
-    - terraform
-    - aws-cli
-    - go
-    - nodejs
-    - helm
-    - k9s
+    - orchestration
 
   tasks:
     - name: Final message

@@ -1,14 +1,6 @@
----
-- name: Check if Terraform is installed
-  command: which terraform
-  register: terraform_check
-  ignore_errors: true
-
-- name: Install Terraform
-  shell: |
-    TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-    wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-    sudo mv terraform /usr/local/bin/
-    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-  when: terraform_check.rc != 0
+- include_role:
+    name: github_binary
+  vars:
+    tool_name: terraform
+    tool_repo: hashicorp/terraform
+    tool_binary: terraform
