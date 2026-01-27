@@ -1,3 +1,6 @@
+# k9s is installed from upstream GitHub releases because distro packages
+# are often missing or lag behind the current version.
+
 ---
 - name: Install k9s
   include_role:

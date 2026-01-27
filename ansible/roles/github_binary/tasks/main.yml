@@ -1,3 +1,6 @@
+# We install CLI tools directly from upstream releases to avoid
+# version drift across Fedora, Ubuntu, and WSL.
+
 ---
 - name: Ensure facts are gathered
   ansible.builtin.setup:
@@ -6,9 +9,6 @@
   ansible.builtin.set_fact:
     tool_arch: "{{ tool_arch_map[ansible_facts['architecture']] | default('amd64') }}"
 
-# -------------------------------------------------
-# Detect existing binary (PATH-aware)
-# -------------------------------------------------
 - name: Check if {{ tool_name }} already installed
   ansible.builtin.command: "command -v {{ tool_binary }}"
   register: tool_bin
@@ -19,17 +19,11 @@
   ansible.builtin.set_fact:
     install_needed: "{{ tool_bin.rc != 0 }}"
 
-# -------------------------------------------------
-# Stop early if already installed
-# -------------------------------------------------
 - name: Skip {{ tool_name }} install (already present)
   ansible.builtin.debug:
-    msg: "✅ {{ tool_name }} already installed, skipping download"
+    msg: "{{ tool_name }} already installed, skipping download"
   when: not install_needed
 
-# -------------------------------------------------
-# Resolve version
-# -------------------------------------------------
 - name: Get latest GitHub release
   ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ tool_repo }}/releases/latest"
@@ -44,9 +38,6 @@
     tool_version_effective: "{{ tool_version if tool_version | length > 0 else gh_release.json.tag_name }}"
   when: install_needed
 
-# -------------------------------------------------
-# Resolve asset name (THIS IS THE KEY FIX)
-# -------------------------------------------------
 - name: Set asset name (archive)
   ansible.builtin.set_fact:
     tool_asset_effective: "{{ tool_asset_template | replace('{{arch}}', tool_arch) }}"
@@ -61,9 +52,6 @@
     - install_needed
     - not tool_archive | bool
 
-# -------------------------------------------------
-# Download
-# -------------------------------------------------
 - name: Download {{ tool_name }}
   ansible.builtin.get_url:
     url: "https://github.com/{{ tool_repo }}/releases/download/{{ tool_version_effective }}/{{ tool_asset_effective }}"
@@ -71,9 +59,6 @@
     mode: "0644"
   when: install_needed
 
-# -------------------------------------------------
-# Install (archive)
-# -------------------------------------------------
 - name: Extract {{ tool_name }} archive
   ansible.builtin.unarchive:
     src: "/tmp/{{ tool_asset_effective }}"
@@ -94,9 +79,6 @@
     - install_needed
     - tool_archive | bool
 
-# -------------------------------------------------
-# Install (raw binary)
-# -------------------------------------------------
 - name: Install {{ tool_name }} raw binary
   ansible.builtin.copy:
     src: "/tmp/{{ tool_asset_effective }}"
@@ -108,9 +90,6 @@
     - install_needed
     - not tool_archive | bool
 
-# -------------------------------------------------
-# Cleanup
-# -------------------------------------------------
 - name: Cleanup {{ tool_name }} temp files
   ansible.builtin.file:
     path: "{{ item }}"

@@ -1,3 +1,16 @@
+# AWS CLI v2 role
+#
+# Purpose:
+# Install AWS CLI v2.
+#
+# Rationale:
+# - v2 is not consistently available in distro repositories
+# - v1/v2 conflicts are common with package managers
+#
+# Invariants:
+# - Installs AWS CLI v2 only
+# - Uses official AWS installer
+
 ---
 - name: Ensure facts are gathered
   ansible.builtin.setup:
@@ -54,4 +67,4 @@
 
 - name: Show AWS CLI version
   ansible.builtin.debug:
-    msg: "✅ AWS CLI installed: {{ awscli_version.stdout }}"
+    msg: "AWS CLI installed: {{ awscli_version.stdout }}"

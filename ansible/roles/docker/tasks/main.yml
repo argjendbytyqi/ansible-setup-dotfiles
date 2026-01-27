@@ -1,10 +1,20 @@
+# Docker engine role
+#
+# Purpose:
+# Install and enable Docker engine.
+#
+# Rationale:
+# - Docker integrates deeply with the OS (systemd, cgroups, networking)
+# - Package manager installation is preferred for system components
+#
+# Invariants:
+# - Docker daemon managed by systemd
+# - User added to docker group
+
 ---
 - name: Ensure facts are gathered
   ansible.builtin.setup:
 
-# =================================================
-# FEDORA / RHEL FAMILY → Use Fedora Docker (moby)
-# =================================================
 - name: Install Docker (Fedora/RHEL)
   ansible.builtin.dnf:
     name:
@@ -16,9 +26,6 @@
   become: true
   when: ansible_facts['os_family'] == "RedHat"
 
-# =================================================
-# DEBIAN / UBUNTU / WSL → Use Docker CE
-# =================================================
 - name: Install Docker prerequisites (Debian/Ubuntu)
   ansible.builtin.apt:
     name:
@@ -71,9 +78,6 @@
   become: true
   when: ansible_facts['os_family'] == "Debian"
 
-# =================================================
-# COMMON: Enable Docker + user access
-# =================================================
 - name: Enable and start Docker
   ansible.builtin.systemd:
     name: docker
