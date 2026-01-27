@@ -1,10 +1,10 @@
+# Go checksums are verified against the authoritative go.dev JSON index.
+# Standalone .sha256 files are not reliable across mirrors.
+
 ---
 - name: Ensure facts are gathered
   ansible.builtin.setup:
 
-# -------------------------------------------------
-# Resolve "real" user (works with sudo/become)
-# -------------------------------------------------
 - name: Resolve effective user for GOPATH
   ansible.builtin.set_fact:
     go_effective_user: >-
@@ -29,9 +29,6 @@
         (go_gopath | length > 0) | ternary(go_gopath, go_passwd.ansible_facts.getent_passwd[go_effective_user][4] ~ '/go')
       }}
 
-# -------------------------------------------------
-# Resolve Go architecture
-# -------------------------------------------------
 - name: Resolve Go architecture
   ansible.builtin.set_fact:
     go_arch: "{{ go_arch_map[ansible_facts['architecture']] | default('amd64') }}"
@@ -41,9 +38,6 @@
     path: "{{ go_root }}/bin/go"
   register: go_bin
 
-# -------------------------------------------------
-# Resolve version + file entry from authoritative JSON
-# -------------------------------------------------
 - name: Fetch Go downloads index (JSON)
   ansible.builtin.uri:
     url: "https://go.dev/dl/?mode=json"
@@ -78,9 +72,6 @@
       }}
   when: not go_bin.stat.exists
 
-# -------------------------------------------------
-# Download + verify
-# -------------------------------------------------
 - name: Download Go tarball
   ansible.builtin.get_url:
     url: "https://go.dev/dl/{{ go_file.filename }}"
@@ -106,9 +97,6 @@
     fail_msg: "Go checksum verification failed!"
   when: not go_bin.stat.exists
 
-# -------------------------------------------------
-# Install Go
-# -------------------------------------------------
 - name: Remove existing Go installation
   ansible.builtin.file:
     path: "{{ go_root }}"
@@ -123,10 +111,7 @@
     remote_src: true
   become: true
   when: not go_bin.stat.exists
-
-# -------------------------------------------------
 # Configure environment (system-wide)
-# -------------------------------------------------
 - name: Configure Go environment
   ansible.builtin.copy:
     dest: "{{ go_profile_path }}"
@@ -137,9 +122,7 @@
       export PATH=$PATH:{{ go_root }}/bin:{{ go_effective_gopath }}/bin
   become: true
 
-# -------------------------------------------------
-# GOPATH directories (create as the real user)
-# -------------------------------------------------
+# GOPATH directories (create as the real user
 - name: Ensure GOPATH directories exist
   ansible.builtin.file:
     path: "{{ item }}"
@@ -153,19 +136,12 @@
     - "{{ go_effective_gopath }}/src"
     - "{{ go_effective_gopath }}/pkg"
   become: true
-
-# -------------------------------------------------
-# Cleanup
-# -------------------------------------------------
 - name: Cleanup Go temp files
   ansible.builtin.file:
     path: "/tmp/{{ go_file.filename }}"
     state: absent
   when: not go_bin.stat.exists
 
-# -------------------------------------------------
-# Verify
-# -------------------------------------------------
 - name: Verify Go installation
   ansible.builtin.command: "{{ go_root }}/bin/go version"
   register: go_ver
@@ -173,4 +149,4 @@
 
 - name: Show Go version
   ansible.builtin.debug:
-    msg: "✅ Go installed: {{ go_ver.stdout }} | GOPATH={{ go_effective_gopath }} | user={{ go_effective_user }}"
+    msg: "Go installed: {{ go_ver.stdout }} | GOPATH={{ go_effective_gopath }} | user={{ go_effective_user }}"
