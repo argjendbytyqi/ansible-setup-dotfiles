@@ -2,16 +2,10 @@
 - name: Ensure facts are gathered
   ansible.builtin.setup:
 
-# -------------------------------
-# Detect architecture
-# -------------------------------
 - name: Resolve AWS CLI architecture
   ansible.builtin.set_fact:
     awscli_arch: "{{ awscli_arch_map[ansible_facts['architecture']] | default('x86_64') }}"
 
-# -------------------------------
-# Ensure unzip is installed
-# -------------------------------
 - name: Install unzip (Debian/Ubuntu/WSL)
   ansible.builtin.apt:
     name: unzip
@@ -27,36 +21,24 @@
   become: true
   when: ansible_facts['os_family'] == "RedHat"
 
-# -------------------------------
-# Download AWS CLI
-# -------------------------------
 - name: Download AWS CLI v2
   ansible.builtin.get_url:
     url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ awscli_arch }}.zip"
     dest: "/tmp/awscliv2.zip"
     mode: "0644"
 
-# -------------------------------
-# Unarchive
-# -------------------------------
 - name: Extract AWS CLI
   ansible.builtin.unarchive:
     src: "/tmp/awscliv2.zip"
     dest: "/tmp"
     remote_src: true
 
-# -------------------------------
-# Install (idempotent)
-# -------------------------------
 - name: Install AWS CLI v2
   ansible.builtin.command: /tmp/aws/install --update
   become: true
   args:
     creates: /usr/local/bin/aws
 
-# -------------------------------
-# Cleanup
-# -------------------------------
 - name: Cleanup AWS CLI installer
   ansible.builtin.file:
     path: "{{ item }}"
@@ -65,9 +47,6 @@
     - /tmp/aws
     - /tmp/awscliv2.zip
 
-# -------------------------------
-# Verify
-# -------------------------------
 - name: Verify AWS CLI installation
   ansible.builtin.command: aws --version
   register: awscli_version

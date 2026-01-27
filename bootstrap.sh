@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🚀 Starting DevOps Tools Setup..."
+echo "Starting Tools Setup..."
 
 # Detect OS
 if [ -f /etc/fedora-release ]; then
@@ -18,7 +18,6 @@ fi
 
 echo "📦 Detected OS: $OS"
 
-# Update package manager
 echo "📥 Updating package manager..."
 sudo $PKG_MANAGER update -y
 
@@ -35,5 +34,5 @@ echo "📥 Installing Ansible..."
 pip3 install --upgrade pip
 pip3 install ansible
 
-# Clone or prepare playbooks
-echo "✅ Bootstrap complete! You can now run: ansible-playbook ansible/playbook.yml"
+
+echo "✅ Installation completed! You can now run: ansible-playbook ansible/playbook.yml"

@@ -1,0 +1,15 @@
+---
+go_version: ""
+
+go_arch_map:
+  x86_64: amd64
+  aarch64: arm64
+
+go_install_parent: /usr/local
+go_root: /usr/local/go
+
+go_profile_path: /etc/profile.d/go.sh
+
+# Optional override. If empty, role will discover real user + home.
+go_user: ""
+go_gopath: ""

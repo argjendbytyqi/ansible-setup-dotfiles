@@ -6,58 +6,65 @@
   ansible.builtin.set_fact:
     kubectl_arch: "{{ kubectl_arch_map[ansible_facts['architecture']] | default('amd64') }}"
 
+- name: Check if kubectl already exists
+  ansible.builtin.stat:
+    path: "{{ kubectl_install_path }}"
+  register: kubectl_bin
+
 - name: Get latest stable kubectl version
   ansible.builtin.uri:
     url: "https://dl.k8s.io/release/stable.txt"
     return_content: true
   register: kubectl_stable
-  when: kubectl_version | length == 0
+  when:
+    - kubectl_version | length == 0
+    - not kubectl_bin.stat.exists
 
-- name: Set effective kubectl version (latest)
+- name: Set effective kubectl version
   ansible.builtin.set_fact:
-    kubectl_version_effective: "{{ kubectl_stable.content | trim }}"
-  when: kubectl_version | length == 0
-
-- name: Set effective kubectl version (pinned)
-  ansible.builtin.set_fact:
-    kubectl_version_effective: "{{ kubectl_version }}"
-  when: kubectl_version | length > 0
+    kubectl_version_effective: "{{ kubectl_version | length > 0 | ternary(kubectl_version, kubectl_stable.content | trim) }}"
+  when: not kubectl_bin.stat.exists
 
 - name: Download kubectl sha256
   ansible.builtin.get_url:
     url: "https://dl.k8s.io/release/{{ kubectl_version_effective }}/bin/linux/{{ kubectl_arch }}/kubectl.sha256"
     dest: "/tmp/kubectl.sha256"
     mode: "0644"
+  when: not kubectl_bin.stat.exists
 
-- name: Download kubectl binary to temp
+- name: Download kubectl binary
   ansible.builtin.get_url:
     url: "https://dl.k8s.io/release/{{ kubectl_version_effective }}/bin/linux/{{ kubectl_arch }}/kubectl"
     dest: "/tmp/kubectl"
     mode: "0755"
+  when: not kubectl_bin.stat.exists
 
 - name: Read expected sha256
   ansible.builtin.slurp:
     src: /tmp/kubectl.sha256
   register: kubectl_sha
+  when: not kubectl_bin.stat.exists
 
-- name: Compute actual sha256
+- name: Verify sha256
   ansible.builtin.command: "sha256sum /tmp/kubectl"
   register: kubectl_sha_actual
   changed_when: false
+  when: not kubectl_bin.stat.exists
 
 - name: Fail if checksum mismatch
   ansible.builtin.assert:
     that:
       - "(kubectl_sha.content | b64decode | trim) in kubectl_sha_actual.stdout"
-    fail_msg: "kubectl checksum verification failed!"
+  when: not kubectl_bin.stat.exists
 
-- name: Install kubectl to {{ kubectl_install_path }}
+- name: Install kubectl
   ansible.builtin.copy:
     src: /tmp/kubectl
     dest: "{{ kubectl_install_path }}"
     mode: "0755"
     remote_src: true
   become: true
+  when: not kubectl_bin.stat.exists
 
 - name: Cleanup temp files
   ansible.builtin.file:
@@ -66,6 +73,7 @@
   loop:
     - /tmp/kubectl
     - /tmp/kubectl.sha256
+  when: not kubectl_bin.stat.exists
 
 - name: Verify kubectl installation
   ansible.builtin.command: "{{ kubectl_install_path }} version --client --output=yaml"
@@ -74,4 +82,4 @@
 
 - name: Show kubectl version
   ansible.builtin.debug:
-    msg: "✅ kubectl installed: {{ kubectl_version_effective }} (arch={{ kubectl_arch }})"
+    msg: "✅ kubectl installed: {{ kubectl_out.stdout_lines[0] }}"

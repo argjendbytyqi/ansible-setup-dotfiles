@@ -1,0 +1,32 @@
+---
+- name: Install Docker
+  include_role:
+    name: docker
+
+- name: Install kubectl
+  include_role:
+    name: kubectl
+
+- name: Install k9s
+  include_role:
+    name: k9s
+
+- name: Install Helm
+  include_role:
+    name: helm
+
+- name: Install Terraform
+  include_role:
+    name: terraform
+
+- name: Install AWS CLI
+  include_role:
+    name: aws-cli
+
+- name: Install Go
+  include_role:
+    name: go
+
+- name: Install Node.js
+  include_role:
+    name: nodejs

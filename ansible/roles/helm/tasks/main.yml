@@ -1,4 +1,6 @@
----
-- name: Download and install Helm
-  shell: |
-    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+- include_role:
+    name: github_binary
+  vars:
+    tool_name: helm
+    tool_repo: helm/helm
+    tool_binary: helm
