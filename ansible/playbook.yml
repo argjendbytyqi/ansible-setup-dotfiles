@@ -1,5 +1,5 @@
 ---
-- name: DevOps Tools Setup
+- name: Tools Setup
   hosts: localhost
   become: yes
   vars: 
@@ -11,4 +11,4 @@
   tasks:
     - name: Final message
       debug:
-        msg: "✅ All DevOps tools installed successfully!"
+        msg: "✅ All tools installed successfully!"
